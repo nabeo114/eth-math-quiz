@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { Card, CardContent, Button, Typography, IconButton, Divider, Tooltip, CircularProgress, Alert } from '@mui/material';
+import { Card, CardContent, Button, Typography, IconButton, Tooltip, Divider, CircularProgress, Alert } from '@mui/material';
 import { ContentCopy } from '@mui/icons-material';
 import { useMetamask } from '../contexts/MetamaskContext';
 
@@ -48,7 +48,6 @@ const Metamask: React.FC = () => {
     setLoading(true);
     try {
       await connectMetamask();
-      await fetchAccountDetails();
     } catch (error) {
       const errorMessage = (error as Error).message;
       console.error('Error connecting Metamask:', errorMessage);

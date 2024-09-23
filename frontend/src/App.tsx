@@ -1,6 +1,7 @@
 import React from 'react';
 import { Container, Box, Card, CardContent, Typography } from '@mui/material';
 import Metamask from './components/Metamask';
+import Contracts from './components/Contracts';
 
 const App: React.FC = () => {
   return (
@@ -10,6 +11,7 @@ const App: React.FC = () => {
           <CardContent>
             <Typography variant="h4">Metamask</Typography>
             <Metamask />
+            <Contracts />
           </CardContent>
         </Card>
       </Box>
