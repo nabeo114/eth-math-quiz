@@ -4,7 +4,7 @@ import contracts from '../../../hardhat/data/contracts.json';
 
 interface ContractContextType {
   contract: ethers.Contract | null;
-  loadContracts: (provider: ethers.Provider | null) => Promise<void>;
+  loadContracts: (provider: ethers.BrowserProvider | ethers.JsonRpcProvider | null) => Promise<void>;
   error: string | null;
 }
 
@@ -22,19 +22,21 @@ export const ContractProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const loadContracts = async (provider: ethers.Provider | null) => {
+  const loadContracts = async (provider: ethers.BrowserProvider | ethers.JsonRpcProvider | null) => {
     setError(null);
     try {
       if (!provider) {
         throw new Error('Provider is required to connect contracts');
       }
 
+      const signer = await provider.getSigner();
+
       if (contracts) {
         // コントラクトのインスタンスを作成
         const contract = new ethers.Contract(
           contracts.contractAddress,
           JSON.parse(contracts.contractABI),
-          provider
+          signer
         );
         setContract(contract);
       } else {

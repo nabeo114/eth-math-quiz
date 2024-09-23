@@ -23,7 +23,7 @@ contract MathQuizToken is ERC20, Ownable {
         Ownable(initialOwner)
     {
         gameActive = false;
-        _mint(msg.sender, 1000000 * 10 ** decimals());
+        _mint(initialOwner, 1000000 * 10 ** decimals());
     }
 
     function mint(address to, uint256 amount) public onlyOwner {
@@ -97,8 +97,6 @@ contract MathQuizToken is ERC20, Ownable {
 
     // 新しいゲームを開始するための関数
     function startNewGame() public {
-        require(!gameActive, "Game is still active");
-
         _startNewGame();
     }
 
