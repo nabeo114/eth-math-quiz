@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { Card, CardContent, Button, Typography, TextField, Tooltip, CircularProgress, Alert } from '@mui/material';
+import { useMetamask } from '../contexts/MetamaskContext';
 import { useContracts } from '../contexts/ContractContext';
 
 const MathQuiz: React.FC = () => {
+  const { signer } = useMetamask();
   const { contract } = useContracts();
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -12,9 +14,29 @@ const MathQuiz: React.FC = () => {
   const [guessError, setGuessError] = useState<string | null>(null);
   const [gameStartedMessage, setGameStartedMessage] = useState<string | null>(null);
   const [guessResultMessage, setGuessResultMessage] = useState<string | null>(null);
+  const [tokenBalance, setTokenBalance] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
+
+  // ERC20トークン残高を取得
+  const fetchTokenBalance = async () => {
+    setTokenError(null);
+    try {
+      if (signer && contract) {
+        const address = await signer.getAddress();
+
+        const tokenBalance = await contract.balanceOf(address);
+        setTokenBalance(ethers.formatEther(tokenBalance));
+      }
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      console.error('Error fetching token balance:', errorMessage);
+      setTokenError(errorMessage);
+    }
+  }
 
   // ゲームの開始処理
   const handleStartNewGame = async () => {
+    setAnswer(0);
     setGameStartedMessage(null);
     setGuessResultMessage(null);
     setStartError(null);
@@ -62,6 +84,13 @@ const MathQuiz: React.FC = () => {
       setGuessLoading(false);
     }
   }
+
+  // 
+  useEffect(() => {
+    if (signer && contract) {
+      fetchTokenBalance();
+    }
+  }, [signer, contract]);
 
   // GameStartedイベントを監視
   useEffect(() => {
@@ -138,6 +167,8 @@ const MathQuiz: React.FC = () => {
 
           // Reactのstateに保存して画面に表示
           setGuessResultMessage(gameMessage);
+
+          fetchTokenBalance();
         });
 
         return () => {
@@ -157,44 +188,62 @@ const MathQuiz: React.FC = () => {
 
   return (
     <>
-      <Button variant="contained" color="primary" onClick={handleStartNewGame} sx={{ mt: 2 }} disabled={startLoading}>
-        {startLoading ? <CircularProgress size={24} /> : 'Start New Game'}
-      </Button>
-      {gameStartedMessage && (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          <Typography variant="h6" color="textSecondary">
-            Question: {gameStartedMessage} = ?
-          </Typography>
-        </Alert>
-      )}
-      {startError && <Alert severity="error" sx={{ mt: 2 }}>{startError}</Alert>}
-
-      {gameStartedMessage && (
-        <>
-          <Tooltip title="Please enter the answer you guess." placement="top" arrow>
-            <TextField
-              label="Answer"
-              value={answer}
-              onChange={(e) => setAnswer(Number(e.target.value))}
-              fullWidth
-              sx={{ mt: 3 }}
-              type="number"
-            />
-          </Tooltip>
-
-          <Button variant="contained" color="primary" onClick={handleGuess} sx={{ mt: 2 }} disabled={guessLoading}>
-            {guessLoading ? <CircularProgress size={24} /> : 'Guess the Answer'}
-          </Button>
-
-          {guessResultMessage && (
-            <Alert severity="info" sx={{ mt: 2 }}>
-              <Typography variant="h6" color="textSecondary">
-                Result: {guessResultMessage}
+      {tokenBalance && (
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Typography variant="body1" color="textSecondary">
+              Token Balance: <Typography component="span" variant="h6" color="textPrimary">
+                {tokenBalance}
               </Typography>
-            </Alert>
-          )}
-          {guessError && <Alert severity="error" sx={{ mt: 2 }}>{guessError}</Alert>}
-        </>
+            </Typography>
+            {tokenError && <Alert severity="error" sx={{ mt: 2 }}>{tokenError}</Alert>}
+          </CardContent>
+        </Card>
+      )}
+      {contract && (
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Button variant="contained" color="primary" onClick={handleStartNewGame} sx={{ mt: 2 }} disabled={startLoading || guessLoading}>
+              {startLoading ? <CircularProgress size={24} /> : 'Start New Game'}
+            </Button>
+            {gameStartedMessage && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="h6" color="textSecondary">
+                  Question: {gameStartedMessage} = ?
+                </Typography>
+              </Alert>
+            )}
+            {startError && <Alert severity="error" sx={{ mt: 2 }}>{startError}</Alert>}
+
+            {(gameStartedMessage && !startLoading) && (
+              <>
+                <Tooltip title="Please enter the answer you guess." placement="top" arrow>
+                  <TextField
+                    label="Answer"
+                    value={answer}
+                    onChange={(e) => setAnswer(Number(e.target.value))}
+                    fullWidth
+                    sx={{ mt: 3 }}
+                    type="number"
+                  />
+                </Tooltip>
+
+                <Button variant="contained" color="primary" onClick={handleGuess} sx={{ mt: 2 }} disabled={guessLoading}>
+                  {guessLoading ? <CircularProgress size={24} /> : 'Guess the Answer'}
+                </Button>
+
+                {guessResultMessage && (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    <Typography variant="h6" color="textSecondary">
+                      Result: {guessResultMessage}
+                    </Typography>
+                  </Alert>
+                )}
+                {guessError && <Alert severity="error" sx={{ mt: 2 }}>{guessError}</Alert>}
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
     </>
   );
